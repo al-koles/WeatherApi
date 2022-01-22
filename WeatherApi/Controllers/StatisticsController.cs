@@ -15,14 +15,14 @@ namespace WeatherApi.Controllers
         {
             _context = new WeatherdbContext();
         }
-        public class Statistics
+        public class TemperatureStatistics
         {
-            public string cityName;
-            public int temperature;
-            public DateTime lastMeasurementTimestamp;
-            public double Avg;
-            public int Max;
-            public int Min;
+            public string? СityName { get; set; }
+            public int Temperature { get; set; }
+            public DateTime LastMeasurementTimestamp { get; set; }
+            public double AvgTemp { get; set; }
+            public int MaxTemp { get; set; }
+            public int MinTemp { get; set; }
         }
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace WeatherApi.Controllers
         /// </summary>
         /// <returns>Temperature statistics</returns>
         [HttpGet("{city}")]
-        public async Task<ActionResult<Statistics>> GetTemperatureStatistics(string city)
+        public async Task<ActionResult<TemperatureStatistics>> GetTemperatureStatistics(string city)
         {
             int cityId = await GetCityId(city);
             if (cityId == -1)
@@ -38,20 +38,21 @@ namespace WeatherApi.Controllers
                 return NotFound();
             }
             var measurements = await (from m in _context.Measurements
-                                      where m.CityId == cityId
+                                      where m.CityId == cityId &&
+                                      m.IsArchived == false
                                       select m).ToListAsync();
             if (!measurements.Any())
             {
                 return NotFound();
             }
             var lastMeasurement = measurements.MaxBy(x => x.Timestamp);
-            Statistics stats = new Statistics();
-            stats.cityName = city;
-            stats.temperature = lastMeasurement!.Temperature;
-            stats.lastMeasurementTimestamp = lastMeasurement.Timestamp;
-            stats.Avg = measurements.Average(m=>m.Temperature);
-            stats.Max = measurements.Max(m=>m.Temperature);
-            stats.Min = measurements.Min(m=>m.Temperature);
+            TemperatureStatistics stats = new TemperatureStatistics();
+            stats.СityName = city;
+            stats.Temperature = lastMeasurement!.Temperature;
+            stats.LastMeasurementTimestamp = lastMeasurement.Timestamp;
+            stats.AvgTemp = measurements.Average(m=>m.Temperature);
+            stats.MaxTemp = measurements.Max(m=>m.Temperature);
+            stats.MinTemp = measurements.Min(m=>m.Temperature);
 
             return stats;
         }
