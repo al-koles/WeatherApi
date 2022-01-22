@@ -5,13 +5,16 @@ using System.Collections.Generic;
 
 namespace WeatherApi.Models
 {
-    public partial class Measurement
+    public partial class City
     {
-        public int CityId { get; set; }
-        public DateTime Timestamp { get; set; }
-        public int Temperature { get; set; }
-        public bool IsArchived { get; set; }
+        public City()
+        {
+            Measurements = new HashSet<Measurement>();
+        }
 
-        public virtual City City { get; set; }
+        public int CityId { get; set; }
+        public string CityName { get; set; }
+
+        public virtual ICollection<Measurement> Measurements { get; set; }
     }
 }

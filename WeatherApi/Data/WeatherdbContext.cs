@@ -19,6 +19,7 @@ namespace WeatherApi.Data
         {
         }
 
+        public virtual DbSet<City> Cities { get; set; }
         public virtual DbSet<Measurement> Measurements { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -32,16 +33,29 @@ namespace WeatherApi.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<City>(entity =>
+            {
+                entity.ToTable("City");
+
+                entity.HasIndex(e => e.CityName, "ux_city")
+                    .IsUnique();
+
+                entity.Property(e => e.CityId).HasColumnName("city_id");
+
+                entity.Property(e => e.CityName)
+                    .HasMaxLength(32)
+                    .IsUnicode(false)
+                    .HasColumnName("cityName");
+            });
+
             modelBuilder.Entity<Measurement>(entity =>
             {
-                entity.HasKey(e => new { e.City, e.Timestamp })
+                entity.HasKey(e => new { e.CityId, e.Timestamp })
                     .HasName("PK_Measurement_1");
 
                 entity.ToTable("Measurement");
 
-                entity.Property(e => e.City)
-                    .HasMaxLength(50)
-                    .HasColumnName("city");
+                entity.Property(e => e.CityId).HasColumnName("city_id");
 
                 entity.Property(e => e.Timestamp)
                     .HasColumnType("datetime")
@@ -50,6 +64,11 @@ namespace WeatherApi.Data
                 entity.Property(e => e.IsArchived).HasColumnName("isArchived");
 
                 entity.Property(e => e.Temperature).HasColumnName("temperature");
+
+                entity.HasOne(d => d.City)
+                    .WithMany(p => p.Measurements)
+                    .HasForeignKey(d => d.CityId)
+                    .HasConstraintName("FK_Measurement_City");
             });
 
             OnModelCreatingPartial(modelBuilder);

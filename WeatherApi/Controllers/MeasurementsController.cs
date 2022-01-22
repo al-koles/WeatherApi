@@ -1,9 +1,4 @@
 ﻿#nullable disable
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WeatherApi.Data;
@@ -31,16 +26,19 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}, {timestamp}")]
         public async Task<ActionResult<Measurement>> GetMeasurement(string city, DateTime timestamp)
         {
+            int cityId = await GetCityId(city);
+            if (cityId ==-1)
+            {
+                return NotFound();
+            }
             var measurement = await (from m in _context.Measurements
-                                     where m.City == city.ToLower() &&
+                                     where m.CityId == cityId &&
                                      m.Timestamp == timestamp
                                      select m).ToListAsync();
-
             if (!measurement.Any())
             {
                 return NotFound();
             }
-            
             return measurement[0];
         }
 
@@ -52,17 +50,18 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}")]
         public async Task<ActionResult<Measurement>> GetLastMeasurement(string city)
         {
-
+            int cityId = await GetCityId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
             var measurement = (await (from m in _context.Measurements
-                                  where m.City == city.ToLower()
-                                  select m).ToListAsync()).MaxBy(x => x.Timestamp);
-
-
+                                      where m.CityId == cityId
+                                      select m).ToListAsync()).MaxBy(x => x.Timestamp);
             if (measurement == null)
             {
                 return NotFound();
             }
-
             return measurement;
         }
 
@@ -74,16 +73,19 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}")]
         public async Task<ActionResult<IEnumerable<Measurement>>> GetCityMeasurements(string city)
         {
+            int cityId = await GetCityId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
             var measurements = await (from m in _context.Measurements
-                                     where m.City == city.ToLower()
-                                     orderby m.Timestamp
-                                     select m).ToListAsync();
-
+                                      where m.CityId == cityId
+                                      orderby m.Timestamp
+                                      select m).ToListAsync();
             if (!measurements.Any())
             {
                 return NotFound();
             }
-
             return measurements;
         }
 
@@ -97,7 +99,12 @@ namespace WeatherApi.Controllers
         [HttpPut("{city}, {timestamp}")]
         public async Task<IActionResult> PutMeasurement(string city, DateTime timestamp, Measurement measurement)
         {
-            measurement.City = city.ToLower();
+            int cityId = await GetCityId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
+            measurement.CityId = cityId;
             measurement.Timestamp = timestamp;
 
             _context.Entry(measurement).State = EntityState.Modified;
@@ -108,7 +115,7 @@ namespace WeatherApi.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!MeasurementExists(city, timestamp))
+                if (!MeasurementExists(cityId, timestamp))
                 {
                     return NotFound();
                 }
@@ -132,18 +139,21 @@ namespace WeatherApi.Controllers
         [HttpPut("{city}, {timestamp1}, {timestamp2}")]
         public async Task<IActionResult> Archieve(string city, DateTime timestamp1, DateTime timestamp2)
         {
+            int cityId = await GetCityId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
             var measurements = await (from m in _context.Measurements
-                                      where m.City == city.ToLower() && m.Timestamp >= timestamp1 && m.Timestamp <= timestamp2
+                                      where m.CityId == cityId &&
+                                      m.Timestamp >= timestamp1 &&
+                                      m.Timestamp <= timestamp2
                                       select m).ToListAsync();
             if (!measurements.Any())
             {
                 return NotFound();
             }
-
             measurements.ForEach((m) => m.IsArchived = true);
-
-            //_context.Entry(measurement).State = EntityState.Modified;
-
             try
             {
                 await _context.SaveChangesAsync();
@@ -152,7 +162,6 @@ namespace WeatherApi.Controllers
             {
                 throw;
             }
-
             return NoContent();
         }
 
@@ -161,10 +170,16 @@ namespace WeatherApi.Controllers
         /// </summary>
         /// <param name="measurement"></param>
         /// <returns>Created row</returns>
-        [HttpPost]
-        public async Task<ActionResult<Measurement>> PostMeasurement(Measurement measurement)
+        [HttpPost("{city}, {timestamp}")]
+        public async Task<ActionResult<Measurement>> PostMeasurement(string city, DateTime timestamp, Measurement measurement)
         {
-            measurement.City = measurement.City.ToLower();
+            int cityId = await GetCityId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
+            measurement.CityId = cityId;
+            measurement.Timestamp = timestamp;
             _context.Measurements.Add(measurement);
             try
             {
@@ -172,7 +187,7 @@ namespace WeatherApi.Controllers
             }
             catch (DbUpdateException)
             {
-                if (MeasurementExists(measurement.City, measurement.Timestamp))
+                if (MeasurementExists(cityId, timestamp))
                 {
                     return Conflict();
                 }
@@ -182,7 +197,7 @@ namespace WeatherApi.Controllers
                 }
             }
 
-            return CreatedAtAction("GetMeasurement", new { city = measurement.City, timestamp = measurement.Timestamp }, measurement);
+            return CreatedAtAction("GetMeasurement", new { city = city, timestamp = measurement.Timestamp }, measurement);
         }
 
         /// <summary>
@@ -194,8 +209,13 @@ namespace WeatherApi.Controllers
         [HttpDelete("{city}, {timestamp}")]
         public async Task<IActionResult> DeleteMeasurement(string city, DateTime timestamp)
         {
+            int cityId = await GetCityId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
             var measurement = await (from m in _context.Measurements
-                                     where m.City == city.ToLower() &&
+                                     where m.CityId == cityId &&
                                      m.Timestamp == timestamp
                                      select m).ToListAsync();
 
@@ -210,9 +230,21 @@ namespace WeatherApi.Controllers
             return NoContent();
         }
 
-        private bool MeasurementExists(string city, DateTime timestamp)
+        private bool MeasurementExists(int cityId, DateTime timestamp)
         {
-            return _context.Measurements.Any(e => e.City == city.ToLower() && e.Timestamp == timestamp);
+            return _context.Measurements.Any(e => e.CityId == cityId && e.Timestamp == timestamp);
+        }
+
+        private async Task<int> GetCityId(string cityName)
+        {
+            var cities = await (from c in _context.Cities
+                      where c.CityName == cityName
+                      select c.CityId).ToListAsync();
+            if (!cities.Any())
+            {
+                return -1;
+            }
+            return cities[0];
         }
     }
 }
