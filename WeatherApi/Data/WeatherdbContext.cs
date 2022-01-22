@@ -34,20 +34,22 @@ namespace WeatherApi.Data
         {
             modelBuilder.Entity<Measurement>(entity =>
             {
+                entity.HasKey(e => new { e.City, e.Timestamp })
+                    .HasName("PK_Measurement_1");
+
                 entity.ToTable("Measurement");
 
-                entity.Property(e => e.MeasurementId).HasColumnName("measurement_id");
-
                 entity.Property(e => e.City)
-                    .IsRequired()
                     .HasMaxLength(50)
                     .HasColumnName("city");
-
-                entity.Property(e => e.Temperature).HasColumnName("temperature");
 
                 entity.Property(e => e.Timestamp)
                     .HasColumnType("datetime")
                     .HasColumnName("timestamp");
+
+                entity.Property(e => e.IsArchived).HasColumnName("isArchived");
+
+                entity.Property(e => e.Temperature).HasColumnName("temperature");
             });
 
             OnModelCreatingPartial(modelBuilder);

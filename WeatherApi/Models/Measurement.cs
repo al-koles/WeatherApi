@@ -7,9 +7,9 @@ namespace WeatherApi.Models
 {
     public partial class Measurement
     {
-        public int MeasurementId { get; set; }
         public string City { get; set; }
-        public int Temperature { get; set; }
         public DateTime Timestamp { get; set; }
+        public int Temperature { get; set; }
+        public bool IsArchived { get; set; }
     }
 }
