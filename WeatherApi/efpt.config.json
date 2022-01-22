@@ -1,0 +1,38 @@
+﻿{
+   "CodeGenerationMode": 2,
+   "ContextClassName": "WeatherdbContext",
+   "ContextNamespace": "Data",
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": true,
+   "ModelNamespace": "Models",
+   "OutputContextPath": "Data",
+   "OutputPath": "Models",
+   "ProjectRootNamespace": "WeatherApi",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "Name": "[dbo].[Measurement]",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": "ALEXEYDESKTOP\\SQLEXPRESS.WeatherDB",
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDbContextSplitting": false,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseInflector": true,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoConstructor": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSpatial": false
+}
