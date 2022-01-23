@@ -2,6 +2,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace WeatherApi.Models
 {
@@ -14,6 +15,8 @@ namespace WeatherApi.Models
         }
 
         public int CityId { get; set; }
+
+        [Required]
         public string CityName { get; set; }
 
         public virtual ICollection<Measurement> Measurements { get; set; }

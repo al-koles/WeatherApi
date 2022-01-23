@@ -1,8 +1,17 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using WeatherApi.Data;
+using WeatherApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+WeatherdbContext context = new WeatherdbContext();
+if (context.Database.EnsureCreated())
+{
+    DBInitializer.Initialize(context);
+}
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

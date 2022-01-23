@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using WeatherApi.Models;
+using WeatherApi.Services;
 
 namespace WeatherApi.Data
 {
@@ -12,6 +13,7 @@ namespace WeatherApi.Data
     {
         public WeatherdbContext()
         {
+            
         }
 
         public WeatherdbContext(DbContextOptions<WeatherdbContext> options)

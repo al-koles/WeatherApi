@@ -29,7 +29,7 @@ namespace WeatherApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<City>>> GetCities()
         {
-            return await _context.Cities.ToListAsync();
+            return await _context.Cities.OrderBy(c=>c.CityId).ToListAsync();
         }
 
         /// <summary>
