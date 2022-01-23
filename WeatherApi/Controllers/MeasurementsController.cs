@@ -148,11 +148,11 @@ namespace WeatherApi.Controllers
         /// - archived data should not be used in statistical calculations
         /// </summary>
         /// <param name="city"></param>
-        /// <param name="timestamp1"></param>
-        /// <param name="timestamp2"></param>
+        /// <param name="fromTime"></param>
+        /// <param name="toTime"></param>
         /// <returns>No content</returns>
-        [HttpPut("{city}, {timestamp1}, {timestamp2}")]
-        public async Task<IActionResult> Archive(string city, DateTime timestamp1, DateTime timestamp2)
+        [HttpPut("{city}, {fromTime}, {toTime}")]
+        public async Task<IActionResult> Archive(string city, DateTime fromTime, DateTime toTime)
         {
             int cityId = await cityIdFinder.GetId(city);
             if (cityId == -1)
@@ -161,8 +161,8 @@ namespace WeatherApi.Controllers
             }
             var measurements = await (from m in _context.Measurements
                                       where m.CityId == cityId &&
-                                      m.Timestamp >= timestamp1 &&
-                                      m.Timestamp <= timestamp2
+                                      m.Timestamp >= fromTime &&
+                                      m.Timestamp <= toTime
                                       select m).ToListAsync();
             if (!measurements.Any())
             {
