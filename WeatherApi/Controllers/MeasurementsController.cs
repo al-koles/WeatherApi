@@ -120,6 +120,7 @@ namespace WeatherApi.Controllers
             }
             measurement.CityId = cityId;
             measurement.Timestamp = timestamp;
+            measurement.City = null;
 
             _context.Entry(measurement).State = EntityState.Modified;
 
@@ -151,7 +152,7 @@ namespace WeatherApi.Controllers
         /// <param name="timestamp2"></param>
         /// <returns>No content</returns>
         [HttpPut("{city}, {timestamp1}, {timestamp2}")]
-        public async Task<IActionResult> Archieve(string city, DateTime timestamp1, DateTime timestamp2)
+        public async Task<IActionResult> Archive(string city, DateTime timestamp1, DateTime timestamp2)
         {
             int cityId = await cityIdFinder.GetId(city);
             if (cityId == -1)
@@ -194,6 +195,7 @@ namespace WeatherApi.Controllers
             }
             measurement.CityId = cityId;
             measurement.Timestamp = timestamp;
+            measurement.City = null;
             _context.Measurements.Add(measurement);
             try
             {

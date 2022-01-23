@@ -7,11 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-WeatherdbContext context = new WeatherdbContext();
-if (context.Database.EnsureCreated())
-{
-    DBInitializer.Initialize(context);
-}
+WeatherdbContext weatherContext = new WeatherdbContext();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -21,6 +17,22 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 //Configure the HTTP request pipeline.
+
+try
+{
+    if (weatherContext.Database.EnsureCreated())
+    {
+        DBInitializer.Initialize(weatherContext);
+    }
+}
+catch (Exception ex)
+{
+    app.Run(async context => await context.Response.WriteAsync($"Error ocured connecting to the database... " +
+    $"Please check out connection string in file appsettings.json and SQL Server is configured.\n\nError message: {ex.Message}", 
+    System.Text.Encoding.Default));
+}
+
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

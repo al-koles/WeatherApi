@@ -60,6 +60,8 @@ namespace WeatherApi.Controllers
         public async Task<IActionResult> PutCity(int id, City city)
         {
             city.CityId = id;
+            city.Measurements = null;
+            city.Statistics = null;
             _context.Entry(city).State = EntityState.Modified;
             try
             {
@@ -87,6 +89,8 @@ namespace WeatherApi.Controllers
         [HttpPost]
         public async Task<ActionResult<City>> PostCity(City city)
         {
+            city.Measurements = null;
+            city.Statistics = null;
             _context.Cities.Add(city);
             try
             {
