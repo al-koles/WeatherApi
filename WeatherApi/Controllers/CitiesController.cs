@@ -17,9 +17,9 @@ namespace WeatherApi.Controllers
     {
         private readonly WeatherdbContext _context;
 
-        public CitiesController()
+        public CitiesController(WeatherdbContext context)
         {
-            _context = new WeatherdbContext();
+            _context = context;
         }
 
         /// <summary>

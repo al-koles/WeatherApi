@@ -19,13 +19,17 @@ namespace WeatherApi.Controllers
     public class StatisticsController : ControllerBase
     {
         private readonly WeatherdbContext _context;
-        private ISearchableId cityIdFinder;
+        private ISearchableId _cityIdFinder;
         private IMemoryCache _cache;
 
-        public StatisticsController(IMemoryCache cache)
+        public StatisticsController(
+            IMemoryCache cache,
+            ISearchableId cityIdFinder,
+            WeatherdbContext context
+            )
         {
-            _context = new WeatherdbContext();
-            cityIdFinder = new CityIdSearcher();
+            _context = context;
+            _cityIdFinder = cityIdFinder;
             _cache = cache;
         }
 
@@ -47,7 +51,7 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}")]
         public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics(string city)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -65,7 +69,7 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}, {fromTime}, {toTime}")]
         public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics(string city, DateTime fromTime, DateTime toTime)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -112,7 +116,7 @@ namespace WeatherApi.Controllers
         [HttpPost("{city}")]
         public async Task<ActionResult<Statistic>> PostStatistic(string city)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -166,7 +170,7 @@ namespace WeatherApi.Controllers
         public async Task<ActionResult<Statistic>> PostStatistic(string city, DateTime fromTime, DateTime toTime)
         {
 
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();

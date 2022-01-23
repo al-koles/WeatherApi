@@ -14,13 +14,17 @@ namespace WeatherApi.Controllers
     public class MeasurementsController : ControllerBase
     {
         private readonly WeatherdbContext _context;
-        private ISearchableId cityIdFinder;
+        private ISearchableId _cityIdFinder;
         private IMemoryCache _cache;
 
-        public MeasurementsController(IMemoryCache cache)
+        public MeasurementsController(
+            IMemoryCache cache, 
+            ISearchableId cityIdFinder, 
+            WeatherdbContext context
+            )
         {
-            _context = new WeatherdbContext();
-            cityIdFinder = new CityIdSearcher();
+            _context = context;
+            _cityIdFinder = cityIdFinder;
             _cache = cache;
         }
 
@@ -46,7 +50,7 @@ namespace WeatherApi.Controllers
             Measurement me = null;
             if(!_cache.TryGetValue($"{city}@{timestamp}", out me))
             {
-                int cityId = await cityIdFinder.GetId(city);
+                int cityId = await _cityIdFinder.GetId(city);
                 if (cityId == -1)
                 {
                     return NotFound();
@@ -72,7 +76,7 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}")]
         public async Task<ActionResult<Measurement>> GetLastMeasurement(string city)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -95,7 +99,7 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}")]
         public async Task<ActionResult<IEnumerable<Measurement>>> GetCityMeasurements(string city)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -121,7 +125,7 @@ namespace WeatherApi.Controllers
         [HttpPut("{city}, {timestamp}")]
         public async Task<IActionResult> PutMeasurement(string city, DateTime timestamp, Measurement measurement)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -162,7 +166,7 @@ namespace WeatherApi.Controllers
         [HttpPut("{city}, {fromTime}, {toTime}")]
         public async Task<IActionResult> Archive(string city, DateTime fromTime, DateTime toTime)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -196,7 +200,7 @@ namespace WeatherApi.Controllers
         [HttpPost("{city}, {timestamp}")]
         public async Task<ActionResult<Measurement>> PostMeasurement(string city, DateTime timestamp, Measurement measurement)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -244,7 +248,7 @@ namespace WeatherApi.Controllers
         [HttpDelete("{city}, {timestamp}")]
         public async Task<IActionResult> DeleteMeasurement(string city, DateTime timestamp)
         {
-            int cityId = await cityIdFinder.GetId(city);
+            int cityId = await _cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
