@@ -10,11 +10,13 @@ namespace WeatherApi.Models
         public City()
         {
             Measurements = new HashSet<Measurement>();
+            Statistics = new HashSet<Statistic>();
         }
 
         public int CityId { get; set; }
         public string CityName { get; set; }
 
         public virtual ICollection<Measurement> Measurements { get; set; }
+        public virtual ICollection<Statistic> Statistics { get; set; }
     }
 }

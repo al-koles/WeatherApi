@@ -1,7 +1,15 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿#nullable disable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WeatherApi.Data;
+using WeatherApi.Interfaces;
+using WeatherApi.Models;
+using WeatherApi.Services;
 
 namespace WeatherApi.Controllers
 {
@@ -10,29 +18,68 @@ namespace WeatherApi.Controllers
     public class StatisticsController : ControllerBase
     {
         private readonly WeatherdbContext _context;
+        private ISearchableId cityIdFinder;
 
         public StatisticsController()
         {
             _context = new WeatherdbContext();
-        }
-        public class TemperatureStatistics
-        {
-            public string? СityName { get; set; }
-            public int Temperature { get; set; }
-            public DateTime LastMeasurementTimestamp { get; set; }
-            public double AvgTemp { get; set; }
-            public int MaxTemp { get; set; }
-            public int MinTemp { get; set; }
+            cityIdFinder = new CityIdSearcher();
         }
 
-        /// <summary>
-        /// Average, max and min temperature for the whole time of measurements
-        /// </summary>
-        /// <returns>Temperature statistics</returns>
-        [HttpGet("{city}")]
-        public async Task<ActionResult<TemperatureStatistics>> GetTemperatureStatistics(string city)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics()
         {
-            int cityId = await GetCityId(city);
+            return await _context.Statistics.ToListAsync();
+        }
+
+        [HttpGet("{city}")]
+        public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics(string city)
+        {
+            int cityId = await cityIdFinder.GetId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
+            return await _context.Statistics.Where(s=>s.CityId == cityId).OrderBy(s=>s.StatisticsId).ToListAsync();
+        }
+
+        [HttpGet("{city}, {fromTime}, {toTime}")]
+        public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics(string city, DateTime fromTime, DateTime toTime)
+        {
+            int cityId = await cityIdFinder.GetId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
+            var statistics = await (from s in _context.Statistics
+                                      where s.CityId == cityId &&
+                                      s.FromTime >= fromTime &&
+                                      s.ToTime <= toTime
+                                      select s).ToListAsync();
+            if (!statistics.Any())
+            {
+                return NotFound();
+            }
+            return await _context.Statistics.ToListAsync();
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Statistic>> GetStatistic(int id)
+        {
+            var statistic = await _context.Statistics.FindAsync(id);
+
+            if (statistic == null)
+            {
+                return NotFound();
+            }
+
+            return statistic;
+        }
+
+        [HttpPost("{city}")]
+        public async Task<ActionResult<Statistic>> PostStatistic(string city)
+        {
+            int cityId = await cityIdFinder.GetId(city);
             if (cityId == -1)
             {
                 return NotFound();
@@ -45,28 +92,82 @@ namespace WeatherApi.Controllers
             {
                 return NotFound();
             }
-            var lastMeasurement = measurements.MaxBy(x => x.Timestamp);
-            TemperatureStatistics stats = new TemperatureStatistics();
-            stats.СityName = city;
-            stats.Temperature = lastMeasurement!.Temperature;
-            stats.LastMeasurementTimestamp = lastMeasurement.Timestamp;
-            stats.AvgTemp = measurements.Average(m=>m.Temperature);
-            stats.MaxTemp = measurements.Max(m=>m.Temperature);
-            stats.MinTemp = measurements.Min(m=>m.Temperature);
+            var firstMeasurementTime = await _context.Measurements.Where(s => s.CityId == cityId).MinAsync(s => s.Timestamp);
+            var lastMeasurement = await Task.Run(()=>measurements.MaxBy(x => x.Timestamp));
+            Statistic stats = new Statistic();
+            stats.CityId = cityId;
+            stats.LastMeasurementTemperature = lastMeasurement!.Temperature;
+            stats.LastMeasurementTime = lastMeasurement.Timestamp;
+            stats.AvgTemperature = measurements.Average(m => m.Temperature);
+            stats.MaxTemperature = measurements.Max(m => m.Temperature);
+            stats.MinTemperature = measurements.Min(m => m.Temperature);
+            stats.FromTime = firstMeasurementTime;
+            stats.ToTime = lastMeasurement.Timestamp;
 
-            return stats;
+
+            _context.Statistics.Add(stats);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetStatistic", new { id = stats.StatisticsId }, stats);
         }
 
-        private async Task<int> GetCityId(string cityName)
+        [HttpPost("{city}, {fromTime}, {toTime}")]
+        public async Task<ActionResult<Statistic>> PostStatistic(string city, DateTime fromTime, DateTime toTime)
         {
-            var cities = await (from c in _context.Cities
-                                where c.CityName == cityName
-                                select c.CityId).ToListAsync();
-            if (!cities.Any())
+
+            int cityId = await cityIdFinder.GetId(city);
+            if (cityId == -1)
             {
-                return -1;
+                return NotFound();
             }
-            return cities[0];
+            var measurements = await (from m in _context.Measurements
+                                      where m.CityId == cityId &&
+                                      m.IsArchived == false &&
+                                      m.Timestamp >= fromTime &&
+                                      m.Timestamp <= toTime
+                                      select m).ToListAsync();
+            if (!measurements.Any())
+            {
+                return NotFound();
+            }
+            var lastMeasurement = measurements.MaxBy(x => x.Timestamp);
+            Statistic stats = new Statistic();
+            stats.CityId = cityId;
+            stats.LastMeasurementTemperature = lastMeasurement!.Temperature;
+            stats.LastMeasurementTime = lastMeasurement.Timestamp;
+            stats.AvgTemperature = measurements.Average(m => m.Temperature);
+            stats.MaxTemperature = measurements.Max(m => m.Temperature);
+            stats.MinTemperature = measurements.Min(m => m.Temperature);
+            stats.FromTime = fromTime;
+            stats.ToTime = toTime;
+
+
+            _context.Statistics.Add(stats);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetStatistic", new { id = stats.StatisticsId }, stats);
         }
+
+        // DELETE: api/Statistics/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteStatistic(int id)
+        {
+            var statistic = await _context.Statistics.FindAsync(id);
+            if (statistic == null)
+            {
+                return NotFound();
+            }
+
+            _context.Statistics.Remove(statistic);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool StatisticExists(int id)
+        {
+            return _context.Statistics.Any(e => e.StatisticsId == id);
+        }
+
     }
 }

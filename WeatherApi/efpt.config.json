@@ -20,6 +20,10 @@
       {
          "Name": "[dbo].[Measurement]",
          "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Statistics]",
+         "ObjectType": 0
       }
    ],
    "UiHint": "ALEXEYDESKTOP\\SQLEXPRESS.WeatherDB",
