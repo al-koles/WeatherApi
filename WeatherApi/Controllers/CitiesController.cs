@@ -22,14 +22,21 @@ namespace WeatherApi.Controllers
             _context = new WeatherdbContext();
         }
 
-        // GET: api/Cities
+        /// <summary>
+        /// Get all cities
+        /// </summary>
+        /// <returns>Collection of cities</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<City>>> GetCities()
         {
             return await _context.Cities.ToListAsync();
         }
 
-        // GET: api/Cities/5
+        /// <summary>
+        /// Get city by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>City</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<City>> GetCity(int id)
         {
@@ -43,8 +50,12 @@ namespace WeatherApi.Controllers
             return city;
         }
 
-        // PUT: api/Cities/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Edit city name
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="city"></param>
+        /// <returns></returns>
         [HttpPut("{id}")]
         public async Task<IActionResult> PutCity(int id, City city)
         {
@@ -68,8 +79,11 @@ namespace WeatherApi.Controllers
             return NoContent();
         }
 
-        // POST: api/Cities
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Post new city
+        /// </summary>
+        /// <param name="city"></param>
+        /// <returns>City</returns>
         [HttpPost]
         public async Task<ActionResult<City>> PostCity(City city)
         {
@@ -85,7 +99,11 @@ namespace WeatherApi.Controllers
             return CreatedAtAction("GetCity", new { id = city.CityId }, city);
         }
 
-        // DELETE: api/Cities/5
+        /// <summary>
+        /// Delete city by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCity(int id)
         {

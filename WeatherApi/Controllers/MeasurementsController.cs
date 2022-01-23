@@ -21,12 +21,22 @@ namespace WeatherApi.Controllers
             cityIdFinder = new CityIdSearcher();
         }
 
+        /// <summary>
+        /// Get all measurements from the database
+        /// </summary>
+        /// <returns>Collection of measurements</returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Measurement>>> GetMeasurements()
         {
             return await (from m in _context.Measurements orderby m.City, m.Timestamp select m).ToListAsync();
         }
 
+        /// <summary>
+        /// Get a measurement
+        /// </summary>
+        /// <param name="city"></param>
+        /// <param name="timestamp"></param>
+        /// <returns>Measurement</returns>
         [HttpGet("{city}, {timestamp}")]
         public async Task<ActionResult<Measurement>> GetMeasurement(string city, DateTime timestamp)
         {

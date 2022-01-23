@@ -26,12 +26,21 @@ namespace WeatherApi.Controllers
             cityIdFinder = new CityIdSearcher();
         }
 
+        /// <summary>
+        /// Get all statistics from the db
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics()
         {
             return await _context.Statistics.ToListAsync();
         }
 
+        /// <summary>
+        /// Get statistics of a city
+        /// </summary>
+        /// <param name="city"></param>
+        /// <returns>Collection of statistics</returns>
         [HttpGet("{city}")]
         public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics(string city)
         {
@@ -43,6 +52,13 @@ namespace WeatherApi.Controllers
             return await _context.Statistics.Where(s=>s.CityId == cityId).OrderBy(s=>s.StatisticsId).ToListAsync();
         }
 
+        /// <summary>
+        /// Get statistics of a city of the time period
+        /// </summary>
+        /// <param name="city"></param>
+        /// <param name="fromTime"></param>
+        /// <param name="toTime"></param>
+        /// <returns>Collection of statistics</returns>
         [HttpGet("{city}, {fromTime}, {toTime}")]
         public async Task<ActionResult<IEnumerable<Statistic>>> GetStatistics(string city, DateTime fromTime, DateTime toTime)
         {
@@ -63,6 +79,11 @@ namespace WeatherApi.Controllers
             return await _context.Statistics.ToListAsync();
         }
 
+        /// <summary>
+        /// Get statistics by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Statistics</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<Statistic>> GetStatistic(int id)
         {
@@ -76,6 +97,11 @@ namespace WeatherApi.Controllers
             return statistic;
         }
 
+        /// <summary>
+        /// Post statistics for the city for all time
+        /// </summary>
+        /// <param name="city"></param>
+        /// <returns>Statistics</returns>
         [HttpPost("{city}")]
         public async Task<ActionResult<Statistic>> PostStatistic(string city)
         {
@@ -111,6 +137,13 @@ namespace WeatherApi.Controllers
             return CreatedAtAction("GetStatistic", new { id = stats.StatisticsId }, stats);
         }
 
+        /// <summary>
+        /// Post statistics for the city for the time period
+        /// </summary>
+        /// <param name="city"></param>
+        /// <param name="fromTime"></param>
+        /// <param name="toTime"></param>
+        /// <returns></returns>
         [HttpPost("{city}, {fromTime}, {toTime}")]
         public async Task<ActionResult<Statistic>> PostStatistic(string city, DateTime fromTime, DateTime toTime)
         {
@@ -148,7 +181,11 @@ namespace WeatherApi.Controllers
             return CreatedAtAction("GetStatistic", new { id = stats.StatisticsId }, stats);
         }
 
-        // DELETE: api/Statistics/5
+        /// <summary>
+        /// Delete statistics by id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteStatistic(int id)
         {
