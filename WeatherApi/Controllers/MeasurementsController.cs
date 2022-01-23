@@ -1,6 +1,7 @@
 ﻿#nullable disable
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using WeatherApi.Data;
 using WeatherApi.Interfaces;
 using WeatherApi.Models;
@@ -14,11 +15,13 @@ namespace WeatherApi.Controllers
     {
         private readonly WeatherdbContext _context;
         private ISearchableId cityIdFinder;
+        private IMemoryCache _cache;
 
-        public MeasurementsController()
+        public MeasurementsController(IMemoryCache cache)
         {
             _context = new WeatherdbContext();
             cityIdFinder = new CityIdSearcher();
+            _cache = cache;
         }
 
         /// <summary>
@@ -40,20 +43,25 @@ namespace WeatherApi.Controllers
         [HttpGet("{city}, {timestamp}")]
         public async Task<ActionResult<Measurement>> GetMeasurement(string city, DateTime timestamp)
         {
-            int cityId = await cityIdFinder.GetId(city);
-            if (cityId ==-1)
+            Measurement me = null;
+            if(!_cache.TryGetValue($"{city}@{timestamp}", out me))
             {
-                return NotFound();
+                int cityId = await cityIdFinder.GetId(city);
+                if (cityId == -1)
+                {
+                    return NotFound();
+                }
+                var measurement = await (from m in _context.Measurements
+                                         where m.CityId == cityId &&
+                                         m.Timestamp == timestamp
+                                         select m).ToListAsync();
+                if (!measurement.Any())
+                {
+                    return NotFound();
+                }
+                me = measurement[0];
             }
-            var measurement = await (from m in _context.Measurements
-                                     where m.CityId == cityId &&
-                                     m.Timestamp == timestamp
-                                     select m).ToListAsync();
-            if (!measurement.Any())
-            {
-                return NotFound();
-            }
-            return measurement[0];
+            return me;
         }
 
         /// <summary>
@@ -199,7 +207,18 @@ namespace WeatherApi.Controllers
             _context.Measurements.Add(measurement);
             try
             {
-                await _context.SaveChangesAsync();
+                var n = await _context.SaveChangesAsync();
+                if (n > 0)
+                {
+                    _cache.Set(
+                        $"{city}@{timestamp}", 
+                        measurement, 
+                        new MemoryCacheEntryOptions 
+                        { 
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) 
+                        }
+                        );
+                }
             }
             catch (DbUpdateException)
             {

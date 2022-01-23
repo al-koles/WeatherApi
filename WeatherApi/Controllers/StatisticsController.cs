@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using WeatherApi.Data;
 using WeatherApi.Interfaces;
 using WeatherApi.Models;
@@ -19,11 +20,13 @@ namespace WeatherApi.Controllers
     {
         private readonly WeatherdbContext _context;
         private ISearchableId cityIdFinder;
+        private IMemoryCache _cache;
 
-        public StatisticsController()
+        public StatisticsController(IMemoryCache cache)
         {
             _context = new WeatherdbContext();
             cityIdFinder = new CityIdSearcher();
+            _cache = cache;
         }
 
         /// <summary>
@@ -87,13 +90,17 @@ namespace WeatherApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Statistic>> GetStatistic(int id)
         {
-            var statistic = await _context.Statistics.FindAsync(id);
-
-            if (statistic == null)
+            Statistic statistic;
+            if(!_cache.TryGetValue(id, out statistic))
             {
-                return NotFound();
-            }
+                statistic = await _context.Statistics.FindAsync(id);
 
+                if (statistic == null)
+                {
+                    return NotFound();
+                }
+            }
+            
             return statistic;
         }
 
@@ -132,7 +139,18 @@ namespace WeatherApi.Controllers
 
 
             _context.Statistics.Add(stats);
-            await _context.SaveChangesAsync();
+            var n = await _context.SaveChangesAsync();
+            if (n > 0)
+            {
+                _cache.Set(
+                    stats.StatisticsId,
+                    stats,
+                    new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                    }
+                    );
+            }
 
             return CreatedAtAction("GetStatistic", new { id = stats.StatisticsId }, stats);
         }
@@ -176,7 +194,18 @@ namespace WeatherApi.Controllers
 
 
             _context.Statistics.Add(stats);
-            await _context.SaveChangesAsync();
+            var n = await _context.SaveChangesAsync();
+            if (n > 0)
+            {
+                _cache.Set(
+                    stats.StatisticsId,
+                    stats,
+                    new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                    }
+                    );
+            }
 
             return CreatedAtAction("GetStatistic", new { id = stats.StatisticsId }, stats);
         }
