@@ -18,7 +18,7 @@ namespace WeatherApi.Data
 
         public WeatherdbContext(DbContextOptions<WeatherdbContext> options)
             : base(options)
-        {
+        {   
         }
 
         public virtual DbSet<City> Cities { get; set; }
