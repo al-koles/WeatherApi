@@ -83,7 +83,7 @@ namespace WeatherApi.Controllers
             {
                 return NotFound();
             }
-            return await _context.Statistics.ToListAsync();
+            return statistics;
         }
 
         /// <summary>
