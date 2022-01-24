@@ -193,6 +193,43 @@ namespace WeatherApi.Controllers
         }
 
         /// <summary>
+        /// Archive weather condition for certain city for certain period of time
+        /// - archived data should not be used in statistical calculations
+        /// </summary>
+        /// <param name="city"></param>
+        /// <param name="fromTime"></param>
+        /// <param name="toTime"></param>
+        /// <returns>No content</returns>
+        [HttpPut("{city}, {fromTime}, {toTime}")]
+        public async Task<IActionResult> UnArchive(string city, DateTime fromTime, DateTime toTime)
+        {
+            int cityId = await _cityIdFinder.GetId(city);
+            if (cityId == -1)
+            {
+                return NotFound();
+            }
+            var measurements = await (from m in _context.Measurements
+                                      where m.CityId == cityId &&
+                                      m.Timestamp >= fromTime &&
+                                      m.Timestamp <= toTime
+                                      select m).ToListAsync();
+            if (!measurements.Any())
+            {
+                return NotFound();
+            }
+            measurements.ForEach((m) => m.IsArchived = false);
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw;
+            }
+            return NoContent();
+        }
+
+        /// <summary>
         /// Add weather condition for certain city at certain point of time
         /// </summary>
         /// <param name="measurement"></param>
